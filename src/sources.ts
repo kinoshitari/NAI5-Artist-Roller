@@ -645,6 +645,43 @@ function looksLikeChallenge(status: number, body: string, cfMitigated = ""): boo
   );
 }
 
+function hasLocalProxy(): boolean {
+  // The desktop launcher and Vite dev server provide this endpoint. A static
+  // website, even when previewed on localhost, must not assume it exists.
+  if (
+    typeof __NAI5_BROWSER_ONLY__ !== "undefined" &&
+    __NAI5_BROWSER_ONLY__
+  ) {
+    return false;
+  }
+  return (
+    typeof window !== "undefined" &&
+    window.location.protocol === "http:" &&
+    ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname)
+  );
+}
+
+async function readBrowserResponse(url: string) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(url, {
+      headers: { Accept: "application/json, application/xml, text/xml, text/plain, text/html, */*" },
+      signal: controller.signal,
+    });
+    // Keep the timeout active while reading the response body as well.
+    const body = await response.text();
+    return { response, body };
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error("拉取超时（15 秒）。请重试，或导入文件 / 手动粘贴内容提取。");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function fetchUrlText(url: string): Promise<FetchedDocument> {
   const cleanUrl = url.trim();
   if (!safeSourceUrl(cleanUrl)) {
@@ -677,17 +714,14 @@ export async function fetchUrlText(url: string): Promise<FetchedDocument> {
     return { body, finalUrl: res.url || cleanUrl, contentType: ct };
   }
 
-  if (
-    typeof window !== "undefined" &&
-    (window.location.protocol === "http:" || window.location.protocol === "https:")
-  ) {
+  if (hasLocalProxy()) {
     try {
-      const proxyRes = await fetch(
+      const { response: proxyRes, body: proxyBody } = await readBrowserResponse(
         `/__nai5_fetch?url=${encodeURIComponent(cleanUrl)}`,
       );
       const ct = proxyRes.headers.get("content-type") ?? "";
       if (ct.includes("application/json")) {
-        const payload = (await proxyRes.json()) as {
+        const payload = JSON.parse(proxyBody) as {
           ok?: boolean;
           status?: number;
           finalUrl?: string;
@@ -695,39 +729,48 @@ export async function fetchUrlText(url: string): Promise<FetchedDocument> {
           cfMitigated?: string;
           body?: string;
           error?: string;
-        };
-        if (!proxyRes.ok) {
-          throw new Error(payload.error || `本地代理拉取失败（HTTP ${proxyRes.status}）`);
+        } | null;
+        // A different local server may return a JSON 404. Only interpret our
+        // proxy protocol; otherwise continue with the ordinary browser path.
+        if (payload && typeof payload.ok === "boolean") {
+          if (!proxyRes.ok) {
+            throw new Error(payload.error || `本地代理拉取失败（HTTP ${proxyRes.status}）`);
+          }
+          const body = payload.body ?? "";
+          const status = payload.status ?? 500;
+          if (looksLikeChallenge(status, body, payload.cfMitigated)) {
+            throw new Error(
+              `目标站点触发人机验证（HTTP ${status}），不支持自动绕过；请在浏览器打开后复制源码到下方“手动粘贴提取”。`,
+            );
+          }
+          if (!payload.ok) {
+            throw new Error(`目标站点返回 HTTP ${status}`);
+          }
+          return {
+            body,
+            finalUrl: payload.finalUrl || cleanUrl,
+            contentType: payload.contentType || "",
+          };
         }
-        const body = payload.body ?? "";
-        const status = payload.status ?? 500;
-        if (looksLikeChallenge(status, body, payload.cfMitigated)) {
-          throw new Error(
-            `目标站点触发人机验证（HTTP ${status}），不支持自动绕过；请在浏览器打开后复制源码到下方“手动粘贴提取”。`,
-          );
-        }
-        if (!payload.ok) {
-          throw new Error(`目标站点返回 HTTP ${status}`);
-        }
-        return {
-          body,
-          finalUrl: payload.finalUrl || cleanUrl,
-          contentType: payload.contentType || "",
-        };
       }
     } catch (err) {
-      if (err instanceof Error && !err.message.includes("Failed to fetch")) {
-        throw err;
-      }
+      // Network failure or a non-proxy JSON response can fall back to Fetch.
+      // Keep explicit proxy/upstream errors, including validation and timeout.
+      if (!(err instanceof TypeError) && !(err instanceof SyntaxError)) throw err;
     }
   }
 
+  if (
+    typeof window !== "undefined" &&
+    window.location.protocol === "https:" &&
+    new URL(cleanUrl).protocol === "http:"
+  ) {
+    throw new Error("HTTPS 网页不能读取 HTTP 数据源。请使用该来源的 HTTPS 地址，或导入文件 / 手动粘贴内容提取。");
+  }
+
   try {
-    const res = await fetch(cleanUrl, {
-      headers: { Accept: "application/json, text/plain, text/html, */*" },
-    });
-    const body = await res.text();
-    if (looksLikeChallenge(res.status, body)) {
+    const { response: res, body } = await readBrowserResponse(cleanUrl);
+    if (looksLikeChallenge(res.status, body, res.headers.get("cf-mitigated") ?? "")) {
       throw new Error(
         `目标站点触发人机验证（HTTP ${res.status}），不支持自动绕过；请在浏览器打开后复制内容到下方“手动粘贴提取”。`,
       );
@@ -741,7 +784,7 @@ export async function fetchUrlText(url: string): Promise<FetchedDocument> {
   } catch (err) {
     if (err instanceof TypeError) {
       throw new Error(
-        "浏览器跨域（CORS）限制阻止了直接访问该网站。请通过桌面端/安卓 App 拉取，或复制网页源码到下方“手动粘贴提取”。",
+        "无法读取该来源：请检查网络及网址；目标站点也可能不允许浏览器跨域（CORS）访问。可导入 JSON / CSV，或把网页源码、JSON、画师清单粘贴到“手动粘贴提取”。",
       );
     }
     throw err;

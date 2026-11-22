@@ -90,6 +90,7 @@ button {
   cursor: pointer;
   white-space: nowrap;
   line-height: 1.2;
+  touch-action: manipulation;
 }
 button:hover:not(:disabled) {
   background: #7b5f36;
@@ -1310,6 +1311,9 @@ body.resizing-row * {
   width: 720px;
   max-width: calc(100vw - 30px);
   max-height: calc(100dvh - 50px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 70px 24px;
   color: var(--text);
   background: var(--window);
   border: 1px solid var(--frame);
@@ -1374,6 +1378,23 @@ body.resizing-row * {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 14px;
+}
+.export-filename {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+.export-text-label {
+  margin-top: 18px;
+}
+.export-text {
+  display: block;
+  width: 100%;
+  min-height: 180px;
+  margin-top: 8px;
+  font-family: monospace;
+  resize: vertical;
+  user-select: text;
+  -webkit-user-select: text;
 }
 .source-details {
   display: grid;
@@ -1547,8 +1568,15 @@ body.resizing-row * {
     min-height: 100dvh;
     max-width: 760px;
     margin: 0 auto;
-    padding: max(6px, env(safe-area-inset-top)) 10px calc(112px + env(safe-area-inset-bottom));
+    padding: max(6px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      calc(112px + env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
     border: 0;
+  }
+  .topbar {
+    flex-wrap: wrap;
+    gap: 0 8px;
   }
   .topbar h1 {
     font-size: 20px;
@@ -1556,11 +1584,17 @@ body.resizing-row * {
   }
   .topbar nav {
     gap: 0;
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
+  .topbar .icon-button {
+    min-width: 44px;
+    min-height: 44px;
   }
   .mobile-tabs {
     display: block;
     position: sticky;
-    top: 0;
+    top: env(safe-area-inset-top);
     z-index: 3;
     padding: 4px 0 6px;
     background: var(--window);
@@ -1738,7 +1772,9 @@ body.resizing-row * {
     display: grid;
     grid-template-columns: 76px minmax(0, 1fr);
     gap: 6px;
-    padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+    padding: 8px max(10px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
     background: var(--window);
     border-top: 1px solid var(--frame);
   }
@@ -1779,9 +1815,9 @@ body.resizing-row * {
   }
   .status-line.error {
     position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: 74px;
+    left: max(10px, env(safe-area-inset-left));
+    right: max(10px, env(safe-area-inset-right));
+    bottom: calc(74px + env(safe-area-inset-bottom));
     z-index: 9;
     max-height: 120px;
     overflow: auto;
@@ -1790,14 +1826,14 @@ body.resizing-row * {
     border: 1px solid #8a3a32;
   }
   .workbench:has(.status-line.error) {
-    padding-bottom: 190px;
+    padding-bottom: calc(190px + env(safe-area-inset-bottom));
   }
   .toast {
-    bottom: 84px;
+    bottom: calc(84px + env(safe-area-inset-bottom));
   }
   .modal {
-    max-width: calc(100vw - 12px);
-    max-height: calc(100dvh - 20px);
+    max-width: calc(100vw - max(6px, env(safe-area-inset-left)) - max(6px, env(safe-area-inset-right)));
+    max-height: calc(100dvh - max(10px, env(safe-area-inset-top)) - max(10px, env(safe-area-inset-bottom)));
   }
   .modal-body {
     padding: 6px 12px 16px;
@@ -1814,6 +1850,12 @@ body.resizing-row * {
   }
   .file-button {
     min-height: 44px;
+  }
+  .workbench input,
+  .workbench select,
+  .workbench textarea {
+    font-size: 16px;
+    scroll-margin-block: 72px 112px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

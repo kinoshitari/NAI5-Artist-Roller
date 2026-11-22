@@ -1,9 +1,13 @@
 node_modules/
 dist/
+dist-pwa/
+qa-results/
 *.log
 .vite/
 .runtime/
 *.tsbuildinfo
 data/raw/
 data/versions/
-release/
+release/*
+!release/NAI5-Artist-Roller-Offline.html
+!release/NAI5-Artist-Roller-Offline.html.sha256

@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc -b && vite build",
+    "build:single": "tsc -b && node scripts/build-single.mjs",
+    "build:pwa": "tsc -b && node scripts/build-pwa.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "test": "vitest run",
+    "test:browser": "node scripts/verify-browser.mjs",
     "data:update": "python scripts/update_artists.py",
     "android:sync": "npm run build && npx cap sync android"
   },
@@ -24,6 +27,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^4.7.0",
+    "playwright": "1.65.1",
     "typescript": "~5.9.3",
     "vite": "^6.4.1",
     "vitest": "^5.1.1"

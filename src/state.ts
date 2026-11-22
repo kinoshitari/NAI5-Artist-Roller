@@ -3,6 +3,7 @@ import source from "../data/source.json";
 import { configKey, defaults, newSeed, roll } from "./engine";
 import { chosenPreset, outputs } from "./presets";
 import { validateBackup } from "./imports";
+import { requestTextDownload } from "./browser-io";
 import type { AppState, Artist, HistoryEntry, Result } from "./types";
 export const builtin: Artist[] = rawArtists;
 export const provenance = source;
@@ -93,7 +94,7 @@ export function loadState() {
   } catch (e) {
     return {
       state: initialState(),
-      error: `本地存档无法读取：${(e as Error).message}。原存档未覆盖。`,
+      error: `本地存档无法读取：${(e as Error).message}。原存档未覆盖，当前更改仅保留在本次会话。请导出完整备份。`,
       raw,
     };
   }
@@ -142,10 +143,5 @@ export function download(
   content: string,
   type = "text/plain;charset=utf-8",
 ) {
-  const url = URL.createObjectURL(new Blob([content], { type })),
-    a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return requestTextDownload({ name, content, type });
 }

@@ -62,10 +62,17 @@ import {
   SOURCE_TEMPLATES,
 } from "./sources";
 import {
+  canShareTextFile,
+  copyTextToClipboard,
+  shareTextFile,
+} from "./browser-io";
+import type { TextFile } from "./browser-io";
+import { WebAppTools } from "./WebAppTools";
+import {
   builtin,
   candidates,
   catalog,
-  download,
+  download as requestDownload,
   loadState,
   members,
   provenance,
@@ -188,12 +195,20 @@ function Modal({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    ref.current?.showModal();
+    const dialog = ref.current;
+    const previousOverflow = document.body.style.overflow;
+    dialog?.showModal();
+    document.body.style.overflow = "hidden";
+    return () => {
+      dialog?.close();
+      document.body.style.overflow = previousOverflow;
+    };
   }, []);
   return (
     <dialog
       ref={ref}
       className="modal"
+      aria-label={title}
       onCancel={(e) => {
         e.preventDefault();
         onClose();
@@ -317,6 +332,7 @@ export default function App() {
     | "backup"
     | "preset"
     | "copy"
+    | "export"
     | "add"
   >(null);
   const [search, setSearch] = useState(""),
@@ -345,6 +361,10 @@ export default function App() {
   const [copyText, setCopyText] = useState(""),
     [outputTab, setOutputTab] = useState<"combined" | "artists">("combined"),
     [historyFavoriteOnly, setHistoryFavoriteOnly] = useState(false);
+  const [exportFile, setExportFile] = useState<TextFile | null>(null),
+    [exportStatus, setExportStatus] = useState(""),
+    [shareBusy, setShareBusy] = useState(false);
+  const exportTextRef = useRef<HTMLTextAreaElement>(null);
   const s = state.settings,
     rows = state.result?.rows ?? [],
     activePreset = chosenPreset(state);
@@ -390,7 +410,7 @@ export default function App() {
       setStorageError("");
     } catch (e) {
       setStorageError(
-        `无法保存到浏览器：${(e as Error).message}。请导出完整备份。`,
+        `无法保存到浏览器：${(e as Error).message}。当前更改仅保留在本次会话，请导出完整备份。`,
       );
     }
   }, [state, canSave]);
@@ -479,40 +499,36 @@ export default function App() {
     try {
       const h = resultRecord(state, state.result, favorite);
       setState((v) => ({ ...v, history: [h, ...v.history].slice(0, 50) }));
-      setNotice(favorite ? "已收藏当前结果" : "已保存当前结果");
+      setNotice(favorite ? "当前结果已加入收藏" : "当前结果已加入历史");
     } catch (e) {
       setActionError((e as Error).message);
     }
   };
   const copy = async (text: string) => {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-        setNotice("已复制");
-        return;
-      }
-    } catch {
-      // Fall through to legacy selection copy for older WebViews.
-    }
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.setAttribute("readonly", "");
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      if (ok) {
-        setNotice("已复制");
-        return;
-      }
-    } catch {
-      // Fall through to manual copy dialog.
+    if (await copyTextToClipboard(text)) {
+      setNotice("已复制");
+      return;
     }
     setCopyText(text);
     setModal("copy");
+  };
+  const download = (
+    name: string,
+    content: string,
+    type = "text/plain;charset=utf-8",
+  ) => {
+    const file = { name, content, type };
+    const alternative = canShareTextFile(file)
+      ? "可以使用下方的保存 / 分享或复制文本。"
+      : "可以复制下方的完整文本，按所示文件名保存。";
+    setExportFile(file);
+    setExportStatus(
+      requestDownload(name, content, type)
+        ? `已请求下载，请检查浏览器的下载列表。${alternative}`
+        : `当前浏览器未能发起下载。${alternative}`,
+    );
+    setActionError("");
+    setModal("export");
   };
   const addToPool = (id: string) => {
     if (!selection.length) return;
@@ -681,7 +697,7 @@ export default function App() {
       });
       setEditingSourceId(draft.id);
       setActionError("");
-      setNotice(`已保存拉取源“${draft.name}”`);
+      setNotice(`已更新拉取源“${draft.name}”`);
     } catch (e) {
       setActionError((e as Error).message);
     }
@@ -804,7 +820,7 @@ export default function App() {
       }));
       setModal(null);
       setActionError("");
-      setNotice("预设已保存");
+      setNotice("预设已应用");
     } catch (e) {
       setActionError((e as Error).message);
     }
@@ -917,15 +933,22 @@ export default function App() {
           >
             <CircleHelp size={22} />
           </button>
+          {typeof __NAI5_PWA__ !== "undefined" && __NAI5_PWA__ && (
+            <WebAppTools />
+          )}
         </nav>
       </header>
       {storageError && (
         <div className="alert" role="alert">
           {storageError}
           <button
-            onClick={() => download("NAI5-原始存档.txt", loaded.raw ?? "")}
+            onClick={() =>
+              loaded.raw !== null
+                ? download("NAI5-原始存档.txt", loaded.raw)
+                : exportBackup()
+            }
           >
-            导出原存档
+            {loaded.raw !== null ? "导出原存档" : "导出当前备份"}
           </button>
           {!canSave && (
             <button onClick={() => setCanSave(true)}>启用新存档</button>
@@ -1930,7 +1953,7 @@ export default function App() {
       >
         {error ||
           notice ||
-          `${activePreset?.name ?? "预设已关闭"}${canSave ? " · 已保存到本机" : ""}`}
+          `${activePreset?.name ?? "预设已关闭"}${canSave && !storageError ? " · 已保存到本机" : " · 仅当前会话"}`}
       </div>
       <div className="mobile-bottom-bar" aria-label="快捷操作">
         <button
@@ -1970,6 +1993,7 @@ export default function App() {
               backup: "备份与导入",
               preset: "编辑质量预设",
               copy: "复制提示词",
+              export: "导出文件",
               add: "加入画师池",
             }[modal]
           }
@@ -2189,8 +2213,8 @@ export default function App() {
               </p>
               <h3>保存</h3>
               <p>
-                最近 50
-                次结果保存在此浏览器。历史保存当时的完整预设、实际画师、权重、种子与数据版本；恢复不重抽。切换预设后可用“保存当前”另存。重要结果请导出完整备份，清理浏览器数据会删除本地存档。
+                浏览器允许本地存储时，会自动保留最近 50
+                次结果。历史包含当时的完整预设、实际画师、权重、种子与数据版本；恢复不重抽。切换预设后可用“保存当前”另存。存储失败时更改仅保留在本次会话。重要结果请导出完整备份，清理浏览器数据会删除本地存档。
               </p>
             </>
           )}
@@ -2198,7 +2222,7 @@ export default function App() {
             <>
               {state.sources.length > 0 && (
                 <section className="modal-section">
-                  <h3>已保存拉取源 · {state.sources.length}</h3>
+                  <h3>已配置拉取源 · {state.sources.length}</h3>
                   <div className="remote-source-list">
                     {state.sources.map((src) => {
                       const linkedPool = state.pools.find(
@@ -2277,7 +2301,10 @@ export default function App() {
                 </div>
                 <p className="muted">
                   {SOURCE_TEMPLATES.find((t) => t.url && t.url === srcUrl)?.hint ??
-                    "填写任意网站/API 地址；含 {page} 时支持连续拉取多页。桌面端与安卓 App 自动走直连，不受网页跨域限制。"}
+                    (typeof __NAI5_BROWSER_ONLY__ !== "undefined" &&
+                    __NAI5_BROWSER_ONLY__
+                      ? "支持公开数据源；含 {page} 时可连续拉取多页。跨域受限时可导入文件或粘贴内容提取。"
+                      : "填写网站/API 地址；含 {page} 时支持连续拉取多页。网页访问需要数据源允许跨域；也可导入文件或粘贴内容提取。")}
                 </p>
                 <label className="form-label">
                   源名称（同时作为生成的画师池名）
@@ -2583,8 +2610,12 @@ export default function App() {
                   <input
                     aria-label="读取完整备份"
                     type="file"
-                    accept=".json"
-                    onChange={(e) => readFile(e.target.files?.[0], true)}
+                    accept=".json,application/json"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      void readFile(file, true);
+                    }}
                   />
                 </label>
                 {pendingBackup && (
@@ -2642,8 +2673,12 @@ export default function App() {
                   <input
                     aria-label="导入画师文件"
                     type="file"
-                    accept=".json,.csv"
-                    onChange={(e) => readFile(e.target.files?.[0], false)}
+                    accept=".json,.csv,application/json,text/csv"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      void readFile(file, false);
+                    }}
                   />
                 </label>
               </section>
@@ -2750,6 +2785,63 @@ export default function App() {
                   </button>
                 )}
               </div>
+            </>
+          )}
+          {modal === "export" && exportFile && (
+            <>
+              <p className="export-filename">{exportFile.name}</p>
+              <p role="status">{exportStatus}</p>
+              <div className="dialog-actions export-actions">
+                <button
+                  onClick={() =>
+                    download(exportFile.name, exportFile.content, exportFile.type)
+                  }
+                >
+                  再次下载
+                </button>
+                {canShareTextFile(exportFile) && (
+                  <button
+                    disabled={shareBusy}
+                    onClick={async () => {
+                      setShareBusy(true);
+                      const result = await shareTextFile(exportFile);
+                      setShareBusy(false);
+                      setExportStatus({
+                        shared: "系统分享已完成；保存位置以你在分享面板中的选择为准。",
+                        cancelled: "已取消分享。文件内容仍在下方，可以再次下载或复制。",
+                        unavailable: "此浏览器暂不支持分享这个文件，请下载或复制下方文本。",
+                        failed: "系统分享未完成，请再次尝试，或下载、复制下方文本。",
+                      }[result]);
+                    }}
+                  >
+                    {shareBusy ? "正在分享…" : "保存 / 分享"}
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    if (await copyTextToClipboard(exportFile.content)) {
+                      setExportStatus("已复制全部文件内容。");
+                    } else {
+                      exportTextRef.current?.focus();
+                      exportTextRef.current?.select();
+                      setExportStatus("剪贴板不可用。请长按下方文本，选择全选并复制。保存时使用上方文件名。");
+                    }
+                  }}
+                >
+                  复制全部文本
+                </button>
+              </div>
+              <label className="form-label export-text-label">
+                文件内容（可全选复制）
+                <textarea
+                  ref={exportTextRef}
+                  aria-label="导出文件内容"
+                  className="export-text"
+                  readOnly
+                  value={exportFile.content}
+                  onFocus={(e) => e.target.select()}
+                />
+              </label>
             </>
           )}
           {modal === "copy" && (

@@ -1,0 +1,18 @@
+.web-app-dialog { max-width: 640px; }
+.web-offline-status { font-weight: 700; }
+.web-offline-status.ready { color: #a7c99c; }
+.web-offline-status.unavailable { color: #e4be79; }
+.web-app-dialog .dialog-actions { flex-wrap: wrap; }
+.web-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid #9b7c4c;
+  color: #f4dfb5;
+  background: #3a3023;
+  text-decoration: none;
+}
+.web-download:hover { background: #51402b; }

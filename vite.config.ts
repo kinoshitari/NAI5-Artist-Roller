@@ -15,8 +15,16 @@ const nai5ProxyPlugin = () => ({
   },
 });
 
-export default defineConfig({
-  plugins: [react(), nai5ProxyPlugin()],
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), ...(mode === "pwa" ? [] : [nai5ProxyPlugin()])],
   base: "./",
+  define: mode === "test" ? {} : {
+    __NAI5_BROWSER_ONLY__: JSON.stringify(mode === "pwa"),
+    __NAI5_PWA__: JSON.stringify(mode === "pwa"),
+  },
+  build: {
+    target: ["safari15.4", "chrome100"],
+    outDir: mode === "pwa" ? "dist-pwa" : "dist",
+  },
   server: { strictPort: true },
-});
+}));
