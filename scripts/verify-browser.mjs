@@ -182,15 +182,48 @@ try {
     const ctx = await context();
     await ctx.setOffline(true);
     const { page, errors } = await open(ctx, pathToFileURL(standalone).href);
+    const measurements = [];
     for (const [width, height] of [[360, 800], [390, 844], [844, 390]]) {
       await page.setViewportSize({ width, height });
       for (const name of ['池与参数', '画师串', '抽取结果']) {
         await tab(page, name);
-        const metrics = await page.evaluate(() => ({ width: innerWidth,
-          documentWidth: document.documentElement.scrollWidth,
-          bottom: document.querySelector('.mobile-bottom-bar').getBoundingClientRect().bottom }));
-        assert(metrics.documentWidth <= metrics.width + 1, `${width}×${height} ${name} overflows horizontally: ${metrics.documentWidth}`);
-        assert(metrics.bottom <= height + 1, `${width}×${height} action bar is outside viewport`);
+        const metrics = await page.evaluate(() => {
+          const bar = document.querySelector('.mobile-bottom-bar');
+          const rect = bar.getBoundingClientRect();
+          const visual = window.visualViewport;
+          const viewport = { left: visual?.offsetLeft ?? 0, top: visual?.offsetTop ?? 0,
+            width: visual?.width ?? innerWidth, height: visual?.height ?? innerHeight,
+            scale: visual?.scale ?? 1 };
+          const point = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+          const hit = document.elementFromPoint(point.x, point.y);
+          const identify = element => element ? { tag: element.tagName,
+            class: element.getAttribute('class'), label: element.getAttribute('aria-label') } : null;
+          return { layoutWidth: innerWidth, layoutHeight: innerHeight,
+            clientWidth: document.documentElement.clientWidth,
+            documentWidth: document.documentElement.scrollWidth, viewport,
+            bar: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom,
+              width: rect.width, height: rect.height },
+            hitTest: { point, target: identify(hit), insideBar: !!hit && bar.contains(hit) },
+            overflowElements: [...document.querySelectorAll('body *')].flatMap(element => {
+              const box = element.getBoundingClientRect();
+              if (!box.width || !box.height || (box.left >= -0.5 && box.right <= document.documentElement.clientWidth + 0.5)) return [];
+              return [{ ...identify(element), left: box.left, right: box.right }];
+            }).slice(0, 12) };
+        });
+        measurements.push({ requested: { width, height }, tab: name, ...metrics });
+        const diagnostic = `${width}×${height} ${name}: ${JSON.stringify(metrics)}`;
+        assert(metrics.documentWidth <= metrics.layoutWidth + 1, `Page overflows horizontally; ${diagnostic}`);
+        assert(metrics.documentWidth <= width + 0.5,
+          `Content exceeds the requested mobile width (automatic scaling must not hide overflow); ${diagnostic}`);
+        // DOMRect and the visible viewport use CSS pixels; mobile engines may
+        // apply a fractional page scale after a viewport resize.
+        assert(metrics.bar.width > 0 && metrics.bar.height > 0 &&
+          metrics.bar.left >= metrics.viewport.left - 1 &&
+          metrics.bar.right <= metrics.viewport.left + metrics.viewport.width + 1 &&
+          metrics.bar.top >= metrics.viewport.top - 1 &&
+          metrics.bar.bottom <= metrics.viewport.top + metrics.viewport.height + 1,
+          `Action bar is outside the visible viewport; ${diagnostic}`);
+        assert(metrics.hitTest.insideBar, `Action bar center is obscured or unreachable; ${diagnostic}`);
       }
       await page.getByRole('button', { name: '备份 / 导入', exact: true }).click();
       const dialog = page.locator('dialog[open]');
@@ -200,7 +233,7 @@ try {
       await page.getByRole('button', { name: '关闭弹窗', exact: true }).click();
     }
     assert.deepEqual(errors, []);
-    return { viewports: ['360×800', '390×844', '844×390'] };
+    return { viewports: ['360×800', '390×844', '844×390'], measurements };
   });
 
   await check('storage-denied-still-usable', async () => {
