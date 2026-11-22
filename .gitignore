@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.log
+.vite/
+.runtime/
+*.tsbuildinfo
+data/raw/
+data/versions/
+release/

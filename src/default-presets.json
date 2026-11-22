@@ -1,0 +1,86 @@
+[
+  {
+    "id": "regular-short",
+    "name": "常规·短",
+    "parts": [
+      "best quality, amazing quality, masterpiece, high complexity, clean details, refined rendering"
+    ],
+    "core": false
+  },
+  {
+    "id": "regular-medium",
+    "name": "常规·中",
+    "parts": [
+      "best quality, amazing quality, masterpiece, high complexity, clean details, refined rendering, balanced contrast, clear visual hierarchy, controlled highlights, readable shadows, harmonious color relationships, refined edge treatment, consistent detail density, coherent light and shadow"
+    ],
+    "core": false
+  },
+  {
+    "id": "regular-long",
+    "name": "常规·长",
+    "parts": [
+      "best quality, amazing quality, masterpiece, high complexity, clean details, refined rendering, balanced contrast, clear visual hierarchy, controlled highlights, readable shadows, harmonious color relationships, refined edge treatment, consistent detail density, coherent light and shadow, subtle tonal variation, carefully separated overlapping forms, precise local details, well-resolved silhouettes, nuanced color transitions, balanced light and dark areas, consistent material cues, controlled saturation, selective detail emphasis, smooth transitions where appropriate, crisp focal details, unified rendering across the image, clean separation between adjacent shapes, carefully resolved finishing details"
+    ],
+    "core": false
+  },
+  {
+    "id": "paint-short",
+    "name": "手绘厚涂·短",
+    "parts": [
+      "best quality, masterpiece, painterly, oil painting (medium), visible brushstrokes, textured brushwork, layered paint, rich color variation"
+    ],
+    "core": false
+  },
+  {
+    "id": "paint-medium",
+    "name": "手绘厚涂·中",
+    "parts": [
+      "best quality, masterpiece, painterly, oil painting (medium), visible brushstrokes, textured brushwork, layered paint, rich color variation, expressive paint strokes, varied brush sizes, layered color blocks, subtle canvas texture, warm and cool color interplay, controlled hard and soft edges, painterly shading, selective impasto"
+    ],
+    "core": false
+  },
+  {
+    "id": "paint-long",
+    "name": "手绘厚涂·长",
+    "parts": [
+      "best quality, masterpiece, painterly, oil painting (medium), visible brushstrokes, textured brushwork, layered paint, rich color variation, expressive paint strokes, varied brush sizes, layered color blocks, subtle canvas texture, warm and cool color interplay, controlled hard and soft edges, painterly shading, selective impasto, directional brushwork following forms, broken color within brushstrokes, translucent glazing between opaque layers, dry-brush accents, irregular pigment coverage, subtle underpainting, thicker paint in focal accents, varied paint opacity, restrained palette mixing, richly layered midtones, textured shadow edges, selective loss and recovery of edges, unified brush rhythm, carefully resolved painted details"
+    ],
+    "core": false
+  },
+  {
+    "id": "depth-short",
+    "name": "2.5D精致·短",
+    "parts": [
+      "best quality, masterpiece, high complexity, depthness, ",
+      "{{3d}}",
+      ", ",
+      "{{face}}",
+      ""
+    ],
+    "core": true
+  },
+  {
+    "id": "depth-medium",
+    "name": "2.5D精致·中",
+    "parts": [
+      "best quality, masterpiece, high complexity, depthness, ",
+      "{{3d}}",
+      ", ",
+      "{{face}}",
+      ", detailed lighting, soft shading, subtle reflected light, smooth tonal transitions, delicate textures, refined highlights, layered shadows, clear material definition, soft ambient illumination, controlled specular highlights"
+    ],
+    "core": true
+  },
+  {
+    "id": "depth-long",
+    "name": "2.5D精致·长",
+    "parts": [
+      "best quality, masterpiece, high complexity, depthness, ",
+      "{{3d}}",
+      ", ",
+      "{{face}}",
+      ", detailed lighting, soft shading, subtle reflected light, smooth tonal transitions, delicate textures, refined highlights, layered shadows, clear material definition, soft ambient illumination, controlled specular highlights, subtle contact shadows, nuanced midtone transitions, material-specific light response, softly graded occlusion, fine surface detail, carefully balanced diffuse and specular lighting, controlled highlight roll-off, subtle color variation within shadows, gentle reflected color, clean transitions between illuminated and shaded areas, refined edge lighting, consistent light direction, selective microtexture, coherent volumetric form"
+    ],
+    "core": true
+  }
+]

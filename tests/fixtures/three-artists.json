@@ -1,0 +1,38 @@
+[
+  {
+    "id": "tags.gallery:bee (deadflow)",
+    "tag": "bee (deadflow)",
+    "displayName": "bee (deadflow)",
+    "sourceRank": 1,
+    "favorites": 179,
+    "sourceUrl": "https://tags.gallery/en/v5?s=favorites",
+    "modelEvidence": "v5_gallery_sample",
+    "aliases": null,
+    "postCount": null,
+    "topScore": null
+  },
+  {
+    "id": "tags.gallery:zero (miraichizu)",
+    "tag": "zero (miraichizu)",
+    "displayName": "zero (miraichizu)",
+    "sourceRank": 2,
+    "favorites": 97,
+    "sourceUrl": "https://tags.gallery/en/v5?s=favorites",
+    "modelEvidence": "v5_gallery_sample",
+    "aliases": null,
+    "postCount": null,
+    "topScore": null
+  },
+  {
+    "id": "tags.gallery:misaka 12003-gou",
+    "tag": "misaka 12003-gou",
+    "displayName": "misaka 12003-gou",
+    "sourceRank": 3,
+    "favorites": 87,
+    "sourceUrl": "https://tags.gallery/en/v5?s=favorites",
+    "modelEvidence": "v5_gallery_sample",
+    "aliases": null,
+    "postCount": null,
+    "topScore": null
+  }
+]

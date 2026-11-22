@@ -1,0 +1,12 @@
+test_incomplete_update_keeps_previous_files (test_updater.UpdateTests.test_incomplete_update_keeps_previous_files) ... ok
+test_listing_and_thumbnail_evidence_are_distinct (test_updater.UpdateTests.test_listing_and_thumbnail_evidence_are_distinct) ... ok
+test_partial_publish_failure_rolls_back_committed_file (test_updater.UpdateTests.test_partial_publish_failure_rolls_back_committed_file) ... ok
+test_real_17_pages_produce_exact_1000 (test_updater.UpdateTests.test_real_17_pages_produce_exact_1000) ... ok
+test_tampered_row_is_checked_against_actual_html (test_updater.UpdateTests.test_tampered_row_is_checked_against_actual_html) ... ok
+test_wrong_model_sort_or_page_rejected (test_updater.UpdateTests.test_wrong_model_sort_or_page_rejected) ... ok
+Not published: 0/1000. Existing data preserved. [Errno 2] No such file or directory: 'C:\\Users\\31132\\AppData\\Local\\Temp\\tmp6d9aml5j\\missing\\page-01.json'
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.439s
+
+OK

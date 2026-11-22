@@ -1,0 +1,180 @@
+{
+  "formatVersion": 1,
+  "name": "V5 收藏前1000",
+  "version": "v5-favs-2026-11-22T14-17-46",
+  "source": "TAGs（第三方榜单）",
+  "sourceUrl": "https://tags.gallery/en/v5?s=favorites",
+  "requestedCount": 1000,
+  "actualCount": 1000,
+  "complete": true,
+  "collectionStartedAt": "2026-11-22T14:17:46.293Z",
+  "collectionEndedAt": "2026-11-22T14:19:13.701Z",
+  "method": "public_rendered_card_html",
+  "ranking": "V5 candidate set; FAVS descending; ties in source order; cross-page exact-tag deduplication",
+  "pages": [
+    {
+      "page": 1,
+      "url": "https://tags.gallery/en/v5?s=favorites",
+      "fetchedAt": "2026-11-22T14:17:46.293Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-01.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 2,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=2",
+      "fetchedAt": "2026-11-22T14:17:47.413Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-02.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 3,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=3",
+      "fetchedAt": "2026-11-22T14:17:49.871Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-03.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 4,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=4",
+      "fetchedAt": "2026-11-22T14:17:51.583Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-04.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 5,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=5",
+      "fetchedAt": "2026-11-22T14:18:00.219Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-05.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 6,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=6",
+      "fetchedAt": "2026-11-22T14:18:33.009Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-06.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 7,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=7",
+      "fetchedAt": "2026-11-22T14:18:57.249Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-07.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 8,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=8",
+      "fetchedAt": "2026-11-22T14:18:58.579Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-08.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 9,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=9",
+      "fetchedAt": "2026-11-22T14:19:00.951Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-09.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 10,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=10",
+      "fetchedAt": "2026-11-22T14:19:01.783Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-10.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 11,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=11",
+      "fetchedAt": "2026-11-22T14:19:02.905Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-11.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 12,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=12",
+      "fetchedAt": "2026-11-22T14:19:03.892Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-12.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 13,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=13",
+      "fetchedAt": "2026-11-22T14:19:10.291Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-13.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 14,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=14",
+      "fetchedAt": "2026-11-22T14:19:10.973Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-14.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 15,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=15",
+      "fetchedAt": "2026-11-22T14:19:11.751Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-15.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 16,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=16",
+      "fetchedAt": "2026-11-22T14:19:12.841Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-16.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    },
+    {
+      "page": 17,
+      "url": "https://tags.gallery/en/v5?s=favorites&p=17",
+      "fetchedAt": "2026-11-22T14:19:13.701Z",
+      "raw": "data/raw/browser-2026-11-22T14-17-46-188Z/page-17.json",
+      "rowCount": 60,
+      "population": 3397,
+      "totalPages": 57
+    }
+  ],
+  "duplicates": [],
+  "limitation": null,
+  "fields": {
+    "favorites": "Site favorite count (FAVS)",
+    "postCount": "Danbooru post count (POSTS)",
+    "topScore": "Danbooru highest single-post score (SCORE)",
+    "aliases": "Only source-provided aliases; otherwise null"
+  },
+  "evidence": "v5_gallery_sample: V5 thumbnail observed; v5_gallery_listing: listed in V5 candidates but the displayed thumbnail is another model or absent. Neither denotes an official training list.",
+  "listingOnlyCount": 8,
+  "idPolicy": "Stable local namespace tags.gallery: followed by the original source tag; not an asserted upstream database ID"
+}

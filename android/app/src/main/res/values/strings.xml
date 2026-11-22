@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NAI5 画师串</string>
+    <string name="title_activity_main">NAI5 画师串</string>
+    <string name="package_name">com.kinoshitari.nai5artistroller</string>
+    <string name="custom_url_scheme">com.kinoshitari.nai5artistroller</string>
+</resources>

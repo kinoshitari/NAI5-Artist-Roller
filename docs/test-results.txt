@@ -1,0 +1,13 @@
+
+> nai5-artist-roller@1.0.0 test
+> vitest run
+
+
+ RUN  v5.1.1 G:/AI/日常/NAI5-Artist-Roller
+
+
+ Test Files  2 passed (2)
+      Tests  41 passed (41)
+   Start at  09:28:26
+   Duration  2.01s (tests 88%, transform 8%, import 4%, worker 1%)
+
