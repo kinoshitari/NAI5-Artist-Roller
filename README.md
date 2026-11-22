@@ -104,6 +104,8 @@ python scripts/update_artists.py --from-browser data/raw/browser-2026-11-22T14-1
 
 ## 验证与界面参考
 
+本次单 HTML 与手机网页版的成品校验值、72 项单测和两种浏览器验收结果，见 [`docs/html-verification.md`](docs/html-verification.md)。
+
 浏览器验收脚本为 [`scripts/verify-browser.mjs`](scripts/verify-browser.mjs)，Playwright 已列入开发依赖。先构建产物，再安装浏览器引擎并执行：
 
 ```sh
