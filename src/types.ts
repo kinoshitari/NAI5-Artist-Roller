@@ -19,6 +19,7 @@ export interface Row {
   tier: Tier;
   weight: number;
   lock: Lock;
+  manual?: true;
 }
 export interface RangeInput {
   min: string;

@@ -123,6 +123,23 @@ export function validateArtists(v: unknown): Artist[] {
   }
   return rows;
 }
+// Accept the artist-only text emitted by the app as well as plain tag lists.
+export function parseArtistTags(input: string): Artist[] {
+  const names = new Map<string, string>();
+  for (const item of input.split(/[,，\r\n]+/)) {
+    const value = item.trim();
+    if (!value) continue;
+    const weighted = value.match(/^[+]?(?:\d+(?:\.\d+)?|\.\d+)::\s*(.+?)\s*::$/);
+    const tag = (weighted?.[1] ?? value).replace(/^artist:\s*/i, "").trim();
+    const key = tagKey(tag);
+    if (!key || /::|^artist:|^https?:/i.test(tag))
+      throw new Error(`无效画师标签：${value}。请输入画师名或完整的 NAI 加权标签`);
+    if (!names.has(key)) names.set(key, tag);
+  }
+  if (!names.size) throw new Error("请输入至少一位画师");
+  return validateArtists([...names.values()].map((tag) => ({ tag })));
+}
+
 export function parseCsv(text: string): Record<string, string>[] {
   const table: string[][] = [];
   let row: string[] = [],
@@ -292,6 +309,7 @@ function validateRows(v: unknown): Row[] {
       tier: r.tier,
       lock: r.lock,
       weight: integer(r.weight, "结果权重"),
+      ...(r.manual === true ? { manual: true as const } : {}),
     } as Row;
   });
   if (rows.length) validateArtists(rows.map((r) => r.artist));

@@ -68,6 +68,7 @@ import {
 } from "./browser-io";
 import type { TextFile } from "./browser-io";
 import { WebAppTools } from "./WebAppTools";
+import { addTagsToPool, editResultArtist } from "./manual-artists";
 import {
   builtin,
   candidates,
@@ -329,6 +330,7 @@ export default function App() {
     | "remoteSources"
     | "help"
     | "manage"
+    | "editArtist"
     | "backup"
     | "preset"
     | "copy"
@@ -338,6 +340,9 @@ export default function App() {
   const [search, setSearch] = useState(""),
     [allLibrary, setAllLibrary] = useState(false),
     [selection, setSelection] = useState<string[]>([]);
+  const [poolTags, setPoolTags] = useState("");
+  const [editedArtist, setEditedArtist] = useState<Artist | null>(null);
+  const [artistDraft, setArtistDraft] = useState("");
   const [poolName, setPoolName] = useState(""),
     [targetPool, setTargetPool] = useState(""),
     [presetDraft, setPresetDraft] = useState(""),
@@ -402,7 +407,7 @@ export default function App() {
   const stale =
     !!state.result &&
     (state.result.generatedConfig !== configKey(s) ||
-      rows.some((r) => !effective.some((a) => a.id === r.artist.id)));
+      rows.some((r) => !r.manual && !effective.some((a) => a.id === r.artist.id)));
   useEffect(() => {
     if (!canSave) return;
     try {
@@ -550,27 +555,59 @@ export default function App() {
     setSelection([]);
     setModal(null);
   };
-  const createPool = (copyCurrent = false) => {
+  const createPool = (copyCurrent = false, withTags = false) => {
     if (!poolName.trim()) {
       setActionError("请输入画师池名称");
       return;
     }
     const id = "pool:" + newSeed();
-    setState((v) => ({
-      ...v,
+    const next = {
+      ...state,
       poolId: id,
-      pools: [
-        ...v.pools,
-        {
-          id,
-          name: poolName.trim(),
-          members: copyCurrent ? pool.map((a) => a.id) : [],
-        },
-      ],
-    }));
-    setPoolName("");
-    setNotice(copyCurrent ? "已复制画师池" : "已新建空池");
+      pools: [...state.pools, {
+        id,
+        name: poolName.trim(),
+        members: copyCurrent ? pool.map((a) => a.id) : [],
+      }],
+    };
+    try {
+      const result = withTags ? addTagsToPool(next, id, poolTags) : null;
+      setState(result?.state ?? next);
+      setSelection([]);
+      setPoolName(poolName.trim());
+      setPoolTags("");
+      setNotice(result ? `已新建池并加入 ${result.count} 位画师` : copyCurrent ? "已复制画师池" : "已新建空池");
+      setActionError("");
+    } catch (e) {
+      setActionError((e as Error).message);
+    }
+  };
+  const addManualPoolTags = () => {
+    try {
+      const next = addTagsToPool(state, state.poolId, poolTags);
+      setState(next.state);
+      setPoolTags("");
+      setActionError("");
+      setNotice(next.count ? `已加入 ${next.count} 位画师` : "这些画师已在池中");
+    } catch (e) {
+      setActionError((e as Error).message);
+    }
+  };
+  const openArtistEditor = (artist: Artist | null) => {
+    setEditedArtist(artist);
+    setArtistDraft(artist?.tag ?? "");
     setActionError("");
+    setModal("editArtist");
+  };
+  const saveArtistEdit = () => {
+    try {
+      setState(editResultArtist(state, editedArtist?.id ?? null, artistDraft, newSeed()));
+      setActionError("");
+      setModal(null);
+      setNotice(editedArtist ? "画师已修改并锁定" : "画师已添加并锁定");
+    } catch (e) {
+      setActionError((e as Error).message);
+    }
   };
   const resetSourceForm = (tpl = SOURCE_TEMPLATES[0]) => {
     setEditingSourceId(null);
@@ -1023,6 +1060,8 @@ export default function App() {
                 title="画师池管理：新建、重命名、复制、删除"
                 onClick={() => {
                   setPoolName(currentCustom?.name ?? "");
+                  setPoolTags("");
+                  setActionError("");
                   setModal("manage");
                 }}
               >
@@ -1705,6 +1744,7 @@ export default function App() {
             </span>
           </div>
           <div className="result-tools">
+            <button onClick={() => openArtistEditor(null)}>添加画师</button>
             <button
               onClick={() =>
                 act((seed) => rerollWeights(s, effective, rows, seed))
@@ -1797,14 +1837,14 @@ export default function App() {
                     {tierLabels[r.tier]}
                   </button>
                   <div className="name-cell">
-                    <a
-                      href={safeSourceUrl(r.artist.sourceUrl)}
-                      target="_blank"
-                      rel="noreferrer"
-                      title="到来源页面查看样图"
+                    <button
+                      className="name-edit"
+                      aria-label={`编辑画师 ${r.artist.tag}`}
+                      title="修改画师名，保存后自动锁定画师"
+                      onClick={() => openArtistEditor(r.artist)}
                     >
                       {r.artist.tag}
-                    </a>
+                    </button>
                   </div>
                   <WeightInput
                     row={r}
@@ -1990,6 +2030,7 @@ export default function App() {
               remoteSources: "画师拉取源",
               help: "使用帮助",
               manage: "画师池管理",
+              editArtist: editedArtist ? "编辑画师" : "添加画师",
               backup: "备份与导入",
               preset: "编辑质量预设",
               copy: "复制提示词",
@@ -2458,6 +2499,30 @@ export default function App() {
               </details>
             </>
           )}
+          {modal === "editArtist" && (
+            <form onSubmit={(event) => {
+              event.preventDefault();
+              saveArtistEdit();
+            }}>
+              <label className="form-label">
+                画师名称
+                <input
+                  autoFocus
+                  className="wide"
+                  value={artistDraft}
+                  onChange={(e) => setArtistDraft(e.target.value)}
+                  placeholder="例如：artist:grgrton"
+                />
+              </label>
+              <p>保存后锁定画师，仍可单独编辑权重。</p>
+              {editedArtist && safeSourceUrl(editedArtist.sourceUrl) && (
+                <p><a href={safeSourceUrl(editedArtist.sourceUrl)} target="_blank" rel="noreferrer">查看原画师来源</a></p>
+              )}
+              <div className="dialog-actions">
+                <button type="submit" disabled={!artistDraft.trim()}>保存并锁定</button>
+              </div>
+            </form>
+          )}
           {modal === "manage" && (
             <>
               <label className="form-label">
@@ -2466,7 +2531,10 @@ export default function App() {
                   className="wide"
                   aria-label="管理当前池"
                   value={state.poolId}
-                  onChange={(e) => selectPool(e.target.value)}
+                  onChange={(e) => {
+                    selectPool(e.target.value);
+                    setPoolName(state.pools.find((p) => p.id === e.target.value)?.name ?? "");
+                  }}
                 >
                   <option value="top100">前100</option>
                   <option value="top300">前300</option>
@@ -2545,6 +2613,29 @@ export default function App() {
                 {pool.length} 位成员，{effective.length}{" "}
                 位可用。创建后到主列表切换“全库”，勾选画师并点“加入池”。
               </p>
+              <section className="modal-section">
+                <h3>自定义画师串</h3>
+                <label className="form-label">
+                  粘贴画师标签
+                  <textarea
+                    className="preset-editor manual-paste-area"
+                    value={poolTags}
+                    onChange={(e) => setPoolTags(e.target.value)}
+                    placeholder="artist:grgrton, 0.85::artist:mo (kireinamo) ::"
+                  />
+                </label>
+                <p>逗号或换行分隔。重复画师自动合并；入池只保存标签，抽取时重新分配权重。</p>
+                <div className="dialog-actions">
+                  <button
+                    disabled={!currentCustom || !!activeSource || !poolTags.trim()}
+                    onClick={addManualPoolTags}
+                  >加入当前自建池</button>
+                  <button
+                    disabled={!poolTags.trim() || !poolName.trim()}
+                    onClick={() => createPool(false, true)}
+                  >新建池并加入</button>
+                </div>
+              </section>
               <h3>全局排除 · {state.excluded.length}</h3>
               <div className="excluded-list">
                 {all

@@ -185,7 +185,7 @@ function checkPool(rows: Row[], pool: Artist[]) {
   const ids = new Set(pool.map((a) => a.id)),
     seen = new Set<string>();
   for (const r of rows) {
-    if (!ids.has(r.artist.id))
+    if (!ids.has(r.artist.id) && !r.manual)
       throw new Error(
         `${r.artist.tag} 不在当前有效池，请解锁后 ROLL 或调整画师池`,
       );
@@ -200,11 +200,13 @@ export function feasibility(s: Settings, pool: Artist[], rows: Row[]) {
     const [lo, hi] = countRange(s),
       locks = rows.filter((r) => r.lock !== "none");
     checkPool(locks, pool);
-    if (pool.length < lo)
+    const poolIds = new Set(pool.map((a) => a.id));
+    const available = poolIds.size + locks.filter((r) => r.manual && !poolIds.has(r.artist.id)).length;
+    if (available < lo)
       throw new Error(
-        `画师池不足：需要至少 ${lo} 人，当前可用 ${pool.length} 人`,
+        `画师池不足：需要至少 ${lo} 人，当前可用 ${available} 人`,
       );
-    for (let n = lo; n <= Math.min(hi, pool.length); n++) {
+    for (let n = lo; n <= Math.min(hi, available); n++) {
       try {
         plans.push(plan(s, n, locks));
       } catch (e) {
@@ -373,7 +375,9 @@ export function replaceRows(
   let i = 0;
   return sortRows(
     rows.map((x) =>
-      selected.includes(x) ? { ...x, artist: choices[i++] } : x,
+      selected.includes(x)
+        ? { artist: choices[i++], tier: x.tier, weight: x.weight, lock: x.lock }
+        : x,
     ),
   );
 }

@@ -178,6 +178,43 @@ try {
       covered: ['offline boot', 'ROLL', 'artist+weight lock', 'JSON export', 'backup restore', 'restore undo'] };
   });
 
+  await check('custom-pool-and-manual-result', async () => {
+    const ctx = await context();
+    await ctx.setOffline(true);
+    const { page, errors } = await open(ctx, pathToFileURL(standalone).href);
+    await tab(page, '抽取结果');
+    const first = page.getByTestId('result-row').first();
+    const originalWeight = await first.locator('input').inputValue();
+    await first.getByRole('button', { name: /^编辑画师 / }).click();
+    await page.getByLabel('画师名称', { exact: true }).fill('artist:QA Manual Identity');
+    await page.getByRole('button', { name: '保存并锁定', exact: true }).click();
+    const renamed = page.getByTestId('result-row').filter({ hasText: 'QA Manual Identity' });
+    assert.equal(await renamed.locator('input').inputValue(), originalWeight);
+    assert(await renamed.getByRole('button', { name: 'QA Manual Identity 锁定：锁画师' }).isVisible());
+    await page.getByRole('button', { name: '添加画师', exact: true }).click();
+    await page.getByLabel('画师名称', { exact: true }).fill('QA Added Identity');
+    await page.getByRole('button', { name: '保存并锁定', exact: true }).click();
+    await page.getByRole('button', { name: 'QA Added Identity 锁定：锁画师' }).waitFor();
+    await roll(page);
+    await page.getByRole('button', { name: 'QA Manual Identity 锁定：锁画师' }).waitFor();
+    await page.getByRole('button', { name: 'QA Added Identity 锁定：锁画师' }).waitFor();
+    await tab(page, '池与参数');
+    await page.getByRole('button', { name: '画师池管理', exact: true }).click();
+    await page.getByLabel('画师池名称', { exact: true }).fill('QA 自建池');
+    await page.getByLabel('粘贴画师标签', { exact: true }).fill('0.75::artist:QA Pool Artist ::, qa pool artist');
+    await page.getByRole('button', { name: '新建池并加入', exact: true }).click();
+    await page.getByLabel('粘贴画师标签', { exact: true }).fill('QA Second Pool Artist');
+    await page.getByRole('button', { name: '加入当前自建池', exact: true }).click();
+    await page.getByRole('button', { name: '关闭弹窗', exact: true }).click();
+    const backup = await stateFromDownload(page);
+    const custom = backup.pools.find(p => p.name === 'QA 自建池');
+    assert.equal(backup.poolId, custom.id);
+    assert.deepEqual(custom.members, ['local:qa pool artist', 'local:qa second pool artist']);
+    assert.equal(backup.result.rows.filter(r => r.manual && r.lock === 'artist').length, 2);
+    assert.deepEqual(errors, []);
+    return { covered: ['result-name editor', 'manual addition', 'locks survive ROLL', 'create and append pool tags', 'offline JSON backup'] };
+  });
+
   await check('mobile-layout', async () => {
     const ctx = await context();
     await ctx.setOffline(true);
