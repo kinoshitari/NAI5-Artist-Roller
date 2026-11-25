@@ -1,3 +1,4 @@
+import { MAX_FAVORITE_NOTE, isReferenceImage } from "./favorite-reference";
 import type {
   AppState,
   Artist,
@@ -447,7 +448,15 @@ export function validateBackup(v: unknown, builtin: Artist[]): AppState {
       !Number.isFinite(Date.parse(String(h.createdAt)))
     )
       throw new Error("历史标记或时间错误");
+    const note = h.note === undefined ? undefined : string(h.note, "收藏备注");
+    if (note !== undefined && note.length > MAX_FAVORITE_NOTE)
+      throw new Error("收藏备注太长");
+    const referenceImage = h.referenceImage;
+    if (referenceImage !== undefined && !isReferenceImage(referenceImage))
+      throw new Error("收藏参考图格式或大小不正确");
     return {
+      ...(note !== undefined ? { note } : {}),
+      ...(referenceImage !== undefined ? { referenceImage } : {}),
       id: string(h.id, "历史 ID"),
       createdAt: string(h.createdAt, "历史时间"),
       favorite: h.favorite,

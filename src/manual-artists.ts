@@ -1,6 +1,6 @@
 import { countRange, distribute, plan, resolveRoleCounts, rng, tierRange } from "./engine";
 import { mergeArtists, parseArtistTags } from "./imports";
-import { catalog, resultRecord, withResult } from "./state";
+import { catalog, prependHistory, resultRecord, withResult } from "./state";
 import type { AppState, Row, Settings, Tier } from "./types";
 
 export function addTagsToPool(s: AppState, poolId: string, input: string) {
@@ -85,7 +85,7 @@ export function editResultArtist(s: AppState, id: string | null, input: string, 
         ? { ...r, artist, manual: true, lock: r.lock === "weight" ? "weight" : "artist" }
         : r),
     };
-    return { ...base, result, history: [resultRecord(base, result), ...base.history].slice(0, 50) };
+    return { ...base, result, history: prependHistory(base.history, resultRecord(base, result)) };
   }
   const next = appendManualRow(s.settings, rows, artist, seed);
   return withResult({ ...base, settings: next.settings }, next.rows, seed);

@@ -1158,6 +1158,33 @@ body.resizing-row * {
   white-space: normal;
 }
 
+.history-note {
+  color: var(--dim);
+}
+.history-favorite-details {
+  padding: 4px;
+  min-height: 36px;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.history-favorite-details img {
+  display: block;
+  width: 32px;
+  height: 25px;
+  object-fit: cover;
+  margin: 0 auto 2px;
+}
+.favorite-artist-text {
+  overflow-wrap: anywhere;
+}
+.favorite-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
 /* Center prompt panel (stretchable main focal area) */
 .prompt-panel {
   background: var(--box);

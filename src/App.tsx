@@ -67,6 +67,7 @@ import {
   shareTextFile,
 } from "./browser-io";
 import type { TextFile } from "./browser-io";
+import { FavoriteEditor } from "./FavoriteEditor";
 import { WebAppTools } from "./WebAppTools";
 import { addTagsToPool, editResultArtist } from "./manual-artists";
 import {
@@ -77,6 +78,7 @@ import {
   loadState,
   members,
   provenance,
+  prependHistory,
   restoreHistory,
   resultRecord,
   STORAGE_KEY,
@@ -331,6 +333,7 @@ export default function App() {
     | "help"
     | "manage"
     | "editArtist"
+    | "favoriteDetails"
     | "backup"
     | "preset"
     | "copy"
@@ -340,6 +343,8 @@ export default function App() {
   const [search, setSearch] = useState(""),
     [allLibrary, setAllLibrary] = useState(false),
     [selection, setSelection] = useState<string[]>([]);
+  const [editingFavoriteId, setEditingFavoriteId] = useState<string | null>(null);
+  const editingFavorite = state.history.find((h) => h.id === editingFavoriteId && h.favorite);
   const [poolTags, setPoolTags] = useState("");
   const [editedArtist, setEditedArtist] = useState<Artist | null>(null);
   const [artistDraft, setArtistDraft] = useState("");
@@ -503,7 +508,9 @@ export default function App() {
     if (!state.result) return;
     try {
       const h = resultRecord(state, state.result, favorite);
-      setState((v) => ({ ...v, history: [h, ...v.history].slice(0, 50) }));
+      const history = prependHistory(state.history, h);
+      if (history === state.history) throw new Error("50 条记录均为收藏，请先取消一条收藏以腾出位置");
+      setState((v) => ({ ...v, history }));
       setNotice(favorite ? "当前结果已加入收藏" : "当前结果已加入历史");
     } catch (e) {
       setActionError((e as Error).message);
@@ -1980,7 +1987,22 @@ export default function App() {
                         {formatWeight(sumWeights(h.result.rows))} ·{" "}
                         {h.preset?.name ?? "无预设"}
                       </small>
+                      {h.favorite && h.note && <span className="history-note">{h.note}</span>}
                     </button>
+                    {h.favorite && (
+                      <button
+                        className="history-favorite-details"
+                        aria-label="编辑收藏备注与参考图"
+                        onClick={() => {
+                          setEditingFavoriteId(h.id);
+                          setActionError("");
+                          setModal("favoriteDetails");
+                        }}
+                      >
+                        {h.referenceImage && <img src={h.referenceImage} alt="" loading="lazy" />}
+                        备注 / 图
+                      </button>
+                    )}
                   </div>
                 ))}
             </div>
@@ -2031,6 +2053,7 @@ export default function App() {
               help: "使用帮助",
               manage: "画师池管理",
               editArtist: editedArtist ? "编辑画师" : "添加画师",
+              favoriteDetails: "收藏备注与参考图",
               backup: "备份与导入",
               preset: "编辑质量预设",
               copy: "复制提示词",
@@ -2498,6 +2521,21 @@ export default function App() {
                 </div>
               </details>
             </>
+          )}
+          {modal === "favoriteDetails" && editingFavorite && (
+            <FavoriteEditor
+              key={editingFavorite.id}
+              entry={editingFavorite}
+              onSave={(note, referenceImage) => {
+                setState((v) => ({
+                  ...v,
+                  history: v.history.map((h) => h.id === editingFavorite.id
+                    ? { ...h, note: note || undefined, referenceImage } : h),
+                }));
+                setModal(null);
+                setNotice("已更新收藏备注与参考图");
+              }}
+            />
           )}
           {modal === "editArtist" && (
             <form onSubmit={(event) => {

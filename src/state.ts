@@ -47,6 +47,14 @@ export function resultRecord(
     candidateIds: candidates(s).map((a) => a.id),
   };
 }
+// Keep the existing 50-entry limit without silently expiring favorites.
+export function prependHistory(history: HistoryEntry[], entry: HistoryEntry) {
+  if (history.length < 50) return [entry, ...history];
+  let drop = history.length - 1;
+  while (drop >= 0 && history[drop].favorite) drop--;
+  if (drop < 0) return history;
+  return [entry, ...history.filter((_, i) => i !== drop)];
+}
 export function withResult(
   s: AppState,
   rows: Result["rows"],
@@ -59,7 +67,7 @@ export function withResult(
     dataVersion: provenance.version,
   };
   const entry = resultRecord(s, result);
-  return { ...s, result, history: [entry, ...s.history].slice(0, 50) };
+  return { ...s, result, history: prependHistory(s.history, entry) };
 }
 export function initialState(): AppState {
   let s: AppState = {

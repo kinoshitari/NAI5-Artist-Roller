@@ -104,6 +104,8 @@ export interface HistoryEntry {
   id: string;
   createdAt: string;
   favorite: boolean;
+  note?: string;
+  referenceImage?: string;
   result: Result;
   settings: Settings;
   preset: Preset | null;
