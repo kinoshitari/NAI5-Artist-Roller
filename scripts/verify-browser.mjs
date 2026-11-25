@@ -385,7 +385,7 @@ try {
   await browser?.close().catch(() => {});
   if (server.listening) await new Promise(resolve => server.close(resolve));
   report.finishedAt = new Date().toISOString();
-  report.passed = !report.fatalError && report.checks.length === 6 && report.checks.every(check => check.status === 'passed');
+  report.passed = !report.fatalError && report.checks.length === 7 && report.checks.every(check => check.status === 'passed');
   await writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2) + '\n');
 }
 if (!report.passed) process.exitCode = 1;
