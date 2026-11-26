@@ -146,17 +146,38 @@ describe("数量、分层与整数总和", () => {
   });
 });
 describe("锁定与局部调整", () => {
-  it("锁人保留身份层级；锁重还保留权重", () => {
-    const s = settings(),
-      rows = roll(s, pool, [], "before");
+  it("只锁人可在主、辅、点缀间调配；锁重仍固定层级及权重", () => {
+    const s = settings(6);
+    const rows = roll(s, pool, [], "before");
+    const identity = rows.find((r) => r.tier === "support")!;
+    const weighted = rows.find((r) => r.tier === "accent")!;
+    identity.lock = "artist";
+    weighted.lock = "weight";
+    const tiers = new Set<string>();
+    for (let i = 0; i < 40; i++) {
+      const out = roll(s, pool, rows, `flexible-tiers-${i}`);
+      const retained = out.find((r) => r.artist.id === identity.artist.id)!;
+      expect(retained.lock).toBe("artist");
+      tiers.add(retained.tier);
+      expect(out.find((r) => r.artist.id === weighted.artist.id)).toEqual(weighted);
+      expect(sumWeights(out)).toBe(autoTotal(6));
+      expect(new Set(out.map((r) => r.artist.id)).size).toBe(6);
+      assertWeights(s, out);
+    }
+    expect(tiers).toEqual(new Set(["main", "support", "accent"]));
+  });
+  it("自由模式锁人可进入分层，但不把自由模式权重锁强塞进层级", () => {
+    const s = settings();
+    s.mode = "free";
+    const rows = roll(s, pool, [], "start-free");
+    const id = rows[0].artist.id;
     rows[0].lock = "artist";
-    rows[1].lock = "weight";
-    const out = roll(s, pool, rows, "after");
-    expect(out.find((r) => r.artist.id === rows[0].artist.id)?.tier).toBe(
-      "main",
-    );
-    expect(out.find((r) => r.artist.id === rows[1].artist.id)).toEqual(rows[1]);
-    expect(sumWeights(out)).toBe(235);
+    s.mode = "tiered";
+    const out = roll(s, pool, rows, "switch-to-tiered");
+    expect(out.find((row) => row.artist.id === id)?.lock).toBe("artist");
+    expect(out.every((row) => row.tier !== "free")).toBe(true);
+    rows[0].lock = "weight";
+    expect(feasibility(s, pool, rows).error).toContain("请先切回锁人");
   });
   it("锁定画师不在当前池或被排除时仍报错", () => {
     const s = settings(),
@@ -210,11 +231,16 @@ describe("锁定与局部调整", () => {
     s.countMax = "4";
     expect(feasibility(s, pool, rows).error).toContain("超过人数上限 4");
   });
-  it("缩减人数不能吞掉已锁定的层级", () => {
+  it("缩减人数可移走只锁人的旧层级，但不能吞掉锁重层级", () => {
     const s = settings(6),
       rows = roll(s, pool, [], "six");
     rows.filter((r) => r.tier === "accent").forEach((r) => (r.lock = "artist"));
     s.exact = "3";
+    const shrunk = roll(s, pool, rows, "three");
+    expect(shrunk.map((r) => r.artist.id).sort()).toEqual(
+      rows.filter((r) => r.lock === "artist").map((r) => r.artist.id).sort(),
+    );
+    rows.filter((r) => r.tier === "accent").forEach((r) => (r.lock = "weight"));
     expect(feasibility(s, pool, rows).error).toContain("锁定点缀层超出");
   });
   it("锁定权重先从可行区间扣除", () => {
@@ -280,7 +306,7 @@ describe("锁定与局部调整", () => {
     expect(out.find((r) => r.artist.id === rows[1].artist.id)).toEqual(rows[1]);
     expect(out.map((r) => r.weight)).toEqual(rows.map((r) => r.weight));
   });
-  it("设主交换层级并保持可行总和；锁定项必须解锁", () => {
+  it("设主允许锁人项交换层级并保持总和，但不移动锁重项", () => {
     const s = settings(),
       rows = roll(s, pool, [], "a"),
       id = rows[4].artist.id,
@@ -291,7 +317,13 @@ describe("锁定与局部调整", () => {
     );
     assertWeights(s, out);
     rows[0].lock = "artist";
-    expect(() => setMain(s, pool, rows, id, "b")).toThrow("解锁双方");
+    rows[4].lock = "artist";
+    const swapped = setMain(s, pool, rows, id, "b");
+    expect(swapped.find((r) => r.tier === "main")).toMatchObject({ artist: rows[4].artist, lock: "artist" });
+    expect(swapped.find((r) => r.artist.id === rows[0].artist.id)).toMatchObject({ tier: "accent", lock: "artist" });
+    assertWeights(s, swapped);
+    rows[0].lock = "weight";
+    expect(() => setMain(s, pool, rows, id, "b")).toThrow("解除相关画师的权重锁");
   });
   it("手动改权重严格校验层级，重分配其他项", () => {
     const s = settings(),

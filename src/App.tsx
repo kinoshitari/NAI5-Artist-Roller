@@ -1864,7 +1864,7 @@ export default function App() {
                   <button
                     className={`lock-cell ${r.lock !== "none" ? "locked" : ""}`}
                     aria-label={`${r.artist.tag} 锁定：${r.lock === "none" ? "未锁" : r.lock === "artist" ? "锁画师" : "锁权重"}`}
-                    title="依次切换：未锁 → 锁画师 → 锁权重"
+                    title="未锁 → 只锁画师（可换层级）→ 锁权重（保留层级）"
                     onClick={() => {
                       setActionError("");
                       setState((v) => ({
@@ -2236,8 +2236,8 @@ export default function App() {
               <h3>锁定与调整</h3>
               <p>
                 锁定按钮依次切换：未锁 → 锁人 →
-                锁重。锁人保留身份和层级，锁重再保留权重。点击“辅 /
-                点缀”层级可与主画师交换；交换前需解锁双方。
+                锁重。锁人只保留画师，ROLL 可重新分配层级和权重。
+                点击“辅 / 点缀”可与主画师交换；只有锁重的画师不能交换。
               </p>
               <p>
                 “换”保持该行权重；“只换辅助 /

@@ -214,13 +214,15 @@ export function feasibility(s: Settings, pool: Artist[], rows: Row[]) {
       throw new Error(
         `画师池不足：需要至少 ${lo} 人，当前可用 ${available} 人`,
       );
-    if (s.mode === "tiered" && locks.some((r) => r.tier === "free"))
-      throw new Error("自由模式下锁定的画师没有层级，请先解锁，再按主次分层 ROLL");
+    // Identity locks still reserve a person, but only weight locks reserve a tier.
+    const pinned = locks.filter((r) => r.lock === "weight");
+    if (s.mode === "tiered" && pinned.some((r) => r.tier === "free"))
+      throw new Error("自由模式的锁重项没有层级，请先切回锁人，再按主次分层 ROLL");
     if (locks.length > hi)
       throw new Error(`已锁定 ${locks.length} 位画师，超过人数上限 ${hi}，请解锁或提高上限`);
     for (let n = Math.max(lo, locks.length); n <= Math.min(hi, available); n++) {
       try {
-        plans.push(plan(s, n, locks));
+        plans.push(plan(s, n, pinned));
       } catch (e) {
         failures.push((e as Error).message);
       }
@@ -328,17 +330,19 @@ export function roll(
     ),
     r,
   );
+  const pinned = locks.filter((x) => x.lock === "weight");
+  const flexible = [
+    ...locks.filter((x) => x.lock === "artist"),
+    ...draw.map((artist): Row => ({
+      artist,
+      tier: "free",
+      weight: 0,
+      lock: "none",
+    })),
+  ];
   return distribute(
     s,
-    [
-      ...locks,
-      ...draw.map((artist, i) => ({
-        artist,
-        tier: tiers[i],
-        weight: 0,
-        lock: "none" as const,
-      })),
-    ],
+    [...pinned, ...flexible.map((row, i) => ({ ...row, tier: tiers[i] }))],
     p,
     r,
   );
@@ -407,9 +411,10 @@ export function setMain(
   if (!mains.length)
     throw new Error("当前分层未配置主画师，请先将主画师数量设为至少 1");
   if (chosen.tier === "main") return rows;
-  const main = mains.find((x) => x.lock === "none") ?? mains[0];
-  if (chosen.lock !== "none" || main.lock !== "none")
-    throw new Error("交换层级前，请先解锁双方");
+  const main = mains.find((x) => x.lock === "none") ??
+    mains.find((x) => x.lock === "artist");
+  if (!main || chosen.lock === "weight")
+    throw new Error("交换层级前，请先解除相关画师的权重锁");
   const swapped = rows.map((x) => ({
     ...x,
     tier: x === chosen ? ("main" as const) : x === main ? chosen.tier : x.tier,
