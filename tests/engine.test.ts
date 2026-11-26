@@ -158,7 +158,7 @@ describe("锁定与局部调整", () => {
     expect(out.find((r) => r.artist.id === rows[1].artist.id)).toEqual(rows[1]);
     expect(sumWeights(out)).toBe(235);
   });
-  it("锁定不在当前池、排除、模式变更均报错", () => {
+  it("锁定画师不在当前池或被排除时仍报错", () => {
     const s = settings(),
       rows = roll(s, pool, [], "before");
     rows[0].lock = "artist";
@@ -169,8 +169,46 @@ describe("锁定与局部调整", () => {
         rows,
       ).error,
     ).toContain("不在当前有效池");
+  });
+  it("3–8 位范围从主次切到自由时沿用旧结果的画师锁及权重锁", () => {
+    const s = settings(6);
+    const rows = roll(s, pool, [], "tiered-before-switch");
+    const identity = rows[0];
+    const weighted = rows[1];
+    identity.lock = "artist";
+    weighted.lock = "weight";
+    s.countMode = "range";
+    s.countMin = "3";
+    s.countMax = "8";
     s.mode = "free";
-    expect(feasibility(s, pool, rows).plans.length).toBe(0);
+    const fit = feasibility(s, pool, rows);
+    expect(fit.error).toBe("");
+    expect(fit.plans.map((p) => p.n)).toEqual([3, 4, 5, 6, 7, 8]);
+    for (let i = 0; i < 20; i++) {
+      const out = roll(s, pool, rows, `after-switch-${i}`);
+      expect(out.every((r) => r.tier === "free")).toBe(true);
+      expect(out.find((r) => r.artist.id === identity.artist.id)?.lock).toBe("artist");
+      expect(out.find((r) => r.artist.id === weighted.artist.id)).toEqual({
+        ...weighted,
+        tier: "free",
+      });
+      assertWeights(s, out);
+    }
+    expect(identity.tier).toBe("main");
+    s.free.range.min = formatWeight(weighted.weight + 1);
+    expect(feasibility(s, pool, rows).error).toContain("锁定权重不在");
+  });
+  it("范围下限低于锁人数时只抽满足锁定的数量，超出上限单独提示", () => {
+    const s = settings(6);
+    s.mode = "free";
+    const rows = roll(s, pool, [], "free-six");
+    rows.slice(0, 5).forEach((r) => (r.lock = "artist"));
+    s.countMode = "range";
+    s.countMin = "3";
+    s.countMax = "8";
+    expect(feasibility(s, pool, rows).plans.map((p) => p.n)).toEqual([5, 6, 7, 8]);
+    s.countMax = "4";
+    expect(feasibility(s, pool, rows).error).toContain("超过人数上限 4");
   });
   it("缩减人数不能吞掉已锁定的层级", () => {
     const s = settings(6),

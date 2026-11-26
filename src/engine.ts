@@ -193,12 +193,20 @@ function checkPool(rows: Row[], pool: Artist[]) {
     seen.add(r.artist.id);
   }
 }
+// The displayed result can still have tiers from the previous mode. A full
+// ROLL into free mode keeps locked artist IDs (and locked weights) but has
+// no ranked slots, so fit those locks into the new mode before planning.
+function locksForRoll(s: Settings, rows: Row[]): Row[] {
+  return rows.filter((r) => r.lock !== "none").map((r) =>
+    s.mode === "free" && r.tier !== "free" ? { ...r, tier: "free" } : r,
+  );
+}
 export function feasibility(s: Settings, pool: Artist[], rows: Row[]) {
   const plans: Plan[] = [],
     failures: string[] = [];
   try {
     const [lo, hi] = countRange(s),
-      locks = rows.filter((r) => r.lock !== "none");
+      locks = locksForRoll(s, rows);
     checkPool(locks, pool);
     const poolIds = new Set(pool.map((a) => a.id));
     const available = poolIds.size + locks.filter((r) => r.manual && !poolIds.has(r.artist.id)).length;
@@ -206,7 +214,11 @@ export function feasibility(s: Settings, pool: Artist[], rows: Row[]) {
       throw new Error(
         `画师池不足：需要至少 ${lo} 人，当前可用 ${available} 人`,
       );
-    for (let n = lo; n <= Math.min(hi, available); n++) {
+    if (s.mode === "tiered" && locks.some((r) => r.tier === "free"))
+      throw new Error("自由模式下锁定的画师没有层级，请先解锁，再按主次分层 ROLL");
+    if (locks.length > hi)
+      throw new Error(`已锁定 ${locks.length} 位画师，超过人数上限 ${hi}，请解锁或提高上限`);
+    for (let n = Math.max(lo, locks.length); n <= Math.min(hi, available); n++) {
       try {
         plans.push(plan(s, n, locks));
       } catch (e) {
@@ -302,7 +314,7 @@ export function roll(
   if (!f.plans.length) throw new Error(f.error);
   const r = rng(seed),
     p = f.plans[randomInt(r, 0, f.plans.length - 1)],
-    locks = previous.filter((x) => x.lock !== "none");
+    locks = locksForRoll(s, previous);
   const locked = new Set(locks.map((x) => x.artist.id));
   const draw = shuffle(
     [...pool]

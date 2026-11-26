@@ -1865,7 +1865,8 @@ export default function App() {
                     className={`lock-cell ${r.lock !== "none" ? "locked" : ""}`}
                     aria-label={`${r.artist.tag} 锁定：${r.lock === "none" ? "未锁" : r.lock === "artist" ? "锁画师" : "锁权重"}`}
                     title="依次切换：未锁 → 锁画师 → 锁权重"
-                    onClick={() =>
+                    onClick={() => {
+                      setActionError("");
                       setState((v) => ({
                         ...v,
                         result: v.result
@@ -1886,8 +1887,8 @@ export default function App() {
                               ),
                             }
                           : null,
-                      }))
-                    }
+                      }));
+                    }}
                   >
                     {r.lock === "none" ? (
                       <LockOpen size={16} />
